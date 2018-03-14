@@ -6,3 +6,7 @@ module.exports.validateUrl = function(url){
     else
         return false;
 }
+
+module.exports.subStrExists = function(str, substr){
+    return str.includes(substr);
+}

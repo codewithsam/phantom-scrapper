@@ -1,11 +1,12 @@
 const landingRouter = require('express').Router();
-const validateUrl = require('./../helpers/utils.js').validateUrl;
-var phantom = require('phantom');
+const validator = require('./../helpers/utils.js');
+const phantom = require('phantom');
+const evaluator = require('./../helpers/evaluator.js');
 
 landingRouter.post('/', async (req,res) => {
     var t = req.body.query;
     t = t.trim();
-    if(typeof t !== "string" || !validateUrl(t)){
+    if(typeof t !== "string" || !validator.validateUrl(t) || !validator.subStrExists(t, "tigerdirect.com")){
         return res.status(500).render('error', { msg: `The URL entered is not Valid. please try again` });
     }
     try{
@@ -18,41 +19,30 @@ landingRouter.post('/', async (req,res) => {
             instance.exit();
             return res.status(500).render('error', {msg: 'Unable to process request!'}); 
         }else{
-            var reviewList = page.evaluate(function(){
-                var resultedList = [];
-                var viewList = document.querySelectorAll('.review');
-                for(var i=0;i<viewList.length;i++){
-                    var reviewerList = viewList[i].querySelectorAll('.reviewer > dd');
-                    var reviewer = reviewerList[0].innerHTML;
-                    var reviewDate = reviewerList[1].innerHTML;
-                    var reviewTitle = viewList[i].querySelector('.rightCol h6').innerHTML;
-                    var reviewComment = viewList[i].querySelector('.rightCol p').innerHTML;
-                    var overAllRating = viewList[i].querySelectorAll('.itemReview dd');
-                    var userCombinedRating = overAllRating[0].innerText;
-                    var userValuesRating = overAllRating[1].innerText;
-                    var userFeaturesRating = overAllRating[2].innerText;
-                    var userQualityRating = overAllRating[3].innerText;
-                    var userPerformanceRating = overAllRating[4].innerText;
-                    resultedList.push({
-                        reviewer: reviewer,
-                        reviewDate: reviewDate,
-                        reviewTitle: reviewTitle,
-                        reviewComment: reviewComment,
-                        userCombinedRating: userCombinedRating,
-                        userValuesRating: userValuesRating,
-                        userFeaturesRating: userFeaturesRating,
-                        userQualityRating: userQualityRating,
-                        userPerformanceRating: userPerformanceRating
-                    });
+
+            var reviewList = page.evaluate(evaluator.evaluateReviews);
+            var prodName = page.evaluate(evaluator.evaluateProductName);
+            var reviewCount = page.evaluate(evaluator.evaluateReviewCount);
+            var overAllRating = page.evaluate(evaluator.overAllRating);
+            var combinedPormises = [reviewList, prodName, reviewCount, overAllRating]; 
+            
+            Promise.all(combinedPormises).then((dump)=>{
+                instance.exit();
+                var combinedErrors = [];
+                for(let i=0;i<dump.length;i++){
+                    if(dump[i].errors.length > 0) combinedErrors.push(dump[i].errors);
                 }
-                return resultedList;
-            });
-            var prodName = page.evaluate(function(){
-                return document.querySelector('.prodName > h1').innerHTML;
-            });
-            Promise.all([reviewList,prodName]).then(([reviews,productName])=>{
-                instance.exit();                
-                return res.render('index', {reviews, productName, title: "TigerDirect Crawler"});
+                if(combinedErrors.length> 0){
+                    return res.status(500).render('error', { msg: combinedErrors});                
+                }else{
+                    return res.render('index', {
+                        reviews: dump[0].result, 
+                        productName: dump[1].result, 
+                        reviewCount: dump[2].result, 
+                        overAllRating: dump[3].result, 
+                        title: "TigerDirect Crawler"
+                    });                    
+                }
             }).catch((err) => {
                 instance.exit();
                 return res.status(500).render('error', { msg: err});
