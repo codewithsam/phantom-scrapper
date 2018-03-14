@@ -4,6 +4,7 @@ var phantom = require('phantom');
 
 landingRouter.post('/', async (req,res) => {
     var t = req.body.query;
+    t = t.trim();
     if(typeof t !== "string" || !validateUrl(t)){
         return res.status(500).render('error', { msg: `The URL entered is not Valid. please try again` });
     }
