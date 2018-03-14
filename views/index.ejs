@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>
+    <%= title %>
+  </title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+  <div class="page">
+    <form action="/" method="POST" class="form form--search">
+      <h3 class="form__title">Crawl Tiger Direct</h3>
+      <div class="form__group">
+        <input type="search" name="query" class="form__control" placeholder="Enter Review page URL of TigerDirect">
+        <button class="btn btn--primary">Get Reviews</button>
+      </div>
+    </form>
+    <% if (typeof reviews === "object" && reviews && productName) { %>
+      <div class="card-list">
+        <h3>
+          <%= productName %>
+        </h3>
+        <% for(var i=0;i<reviews.length;i++){ %>
+          <div class="card-review">
+            <div class="card-review__header">
+              <h3><%= reviews[i].reviewer %></h3>
+              <p><%= reviews[i].reviewDate %></p>
+            </div>
+            <div class="card-review__container">
+              <div class="card-review__left">
+                <div class="card-review__rating-container">
+                  <ul class="card-review__rating">
+                    <li class="card-review__rating__list"><b>Overall: </b> <strong> <%= reviews[i].userCombinedRating %></strong> </li>
+                    <li class="card-review__rating__list"><span>Value: </span> <%= reviews[i].userValuesRating %> </li>
+                    <li class="card-review__rating__list"><span>Features: </span> <%= reviews[i].userFeaturesRating %> </li>
+                    <li class="card-review__rating__list"><span>Quality: </span> <%= reviews[i].userQualityRating %> </li>
+                    <li class="card-review__rating__list"><span>Performance: </span> <%= reviews[i].userPerformanceRating %> </li>
+                  </ul>
+                </div>
+              </div>
+              <div class="card-review__right">
+                <h3>
+                    <%= reviews[i].reviewTitle %>
+                </h3>
+                <p>
+                    <%= reviews[i].reviewComment %>
+                </p>
+              </div>
+            </div>
+          </div>
+          <% } %>
+      </div>
+      <% } %>
+  </div>
+</body>
+
+</html>
